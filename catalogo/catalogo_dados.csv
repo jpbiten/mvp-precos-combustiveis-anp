@@ -1,0 +1,43 @@
+tabela,coluna,tipo,descricao,dominio,obrigatoria,linhagem
+stg_precos,arquivo_origem,STRING,Arquivo CSV de origem da linha,ca-AAAA-SS.csv,Sim,Metadado da leitura
+stg_precos,regiao,STRING,Sigla da região do posto,"N, NE, CO, SE, S",Sim,"ANP, série semestral: Regiao - Sigla (R2)"
+stg_precos,uf,STRING,Sigla do estado do posto,27 UFs,Sim,"ANP, série semestral: Estado - Sigla (R2)"
+stg_precos,municipio,STRING,Município do posto,Texto em caixa alta,Sim,"ANP, série semestral: Municipio (R2)"
+stg_precos,cnpj,STRING,"CNPJ do posto, só dígitos",14 dígitos,Sim,"ANP, série semestral: CNPJ da Revenda (R3)"
+stg_precos,produto,STRING,Combustível pesquisado,"GASOLINA, GASOLINA ADITIVADA, ETANOL, DIESEL, DIESEL S10, GNV",Sim,"ANP, série semestral: Produto (R2)"
+stg_precos,categoria,STRING,Categoria do combustível; nula se o produto for desconhecido,"Gasolina, Etanol, Diesel, GNV",Não,Derivada de produto (R9)
+stg_precos,unidade,STRING,Unidade do preço,"R$ / litro, R$ / m³",Sim,"ANP, série semestral: Unidade de Medida"
+stg_precos,bandeira,STRING,Distribuidora cuja marca o posto exibe,Texto; BRANCA = sem marca,Sim,"ANP, série semestral: Bandeira (R2)"
+stg_precos,data_coleta,DATE,Data da coleta do preço; nula se inválida,jan/2024 a jun/2026,Não,"ANP, série semestral: Data da Coleta (R5)"
+stg_precos,valor_venda,DOUBLE,Preço de venda ao consumidor; nulo se ausente ou inválido,Número positivo,Não,"ANP, série semestral: Valor de Venda (R4)"
+stg_precos,motivo_exclusao,STRING,Motivo de exclusão da fato; nulo se a linha é válida,"CNPJ inválido, Local ausente, Data inválida, Produto desconhecido, Preço ausente ou inválido, Preço fora da faixa plausível",Não,Regras R6 e R7
+dim_tempo,sk_data,INT,Chave da data (AAAAMMDD),20240101 a 20260630,Sim,Gerada (R12)
+dim_tempo,data,DATE,Data,Período da coleta,Sim,Gerada
+dim_tempo,ano,INT,Ano,2024 a 2026,Sim,Derivada de data
+dim_tempo,semestre,INT,Semestre do ano,"1, 2",Sim,Derivada de data
+dim_tempo,mes,INT,Mês,1 a 12,Sim,Derivada de data
+dim_tempo,inicio_semana,DATE,Segunda-feira da semana da data,Data,Sim,Derivada de data
+dim_tempo,dia_semana,INT,Dia da semana,1 (domingo) a 7 (sábado),Sim,Derivada de data
+dim_local,sk_local,INT,Chave do município,Inteiro sequencial,Sim,Gerada (R12)
+dim_local,regiao,STRING,Sigla da região,"N, NE, CO, SE, S",Sim,stg_precos.regiao
+dim_local,uf,STRING,Sigla do estado,27 UFs,Sim,stg_precos.uf
+dim_local,municipio,STRING,Município,Texto em caixa alta,Sim,stg_precos.municipio
+dim_produto,sk_produto,INT,Chave do produto,Inteiro sequencial,Sim,Gerada (R12)
+dim_produto,produto,STRING,Combustível,"GASOLINA, GASOLINA ADITIVADA, ETANOL, DIESEL, DIESEL S10, GNV",Sim,stg_precos.produto
+dim_produto,categoria,STRING,Categoria do combustível,"Gasolina, Etanol, Diesel, GNV",Sim,R9
+dim_produto,unidade,STRING,Unidade do preço,"R$ / litro, R$ / m³",Sim,stg_precos.unidade
+dim_bandeira,sk_bandeira,INT,Chave da bandeira,Inteiro sequencial,Sim,Gerada (R12)
+dim_bandeira,bandeira,STRING,Distribuidora exibida pelo posto,Texto; BRANCA = sem marca,Sim,stg_precos.bandeira
+dim_bandeira,tipo_bandeira,STRING,Posto com ou sem marca de distribuidora,"Bandeira branca, Bandeirada",Sim,R10
+dim_posto,sk_posto,INT,Chave do posto,Inteiro sequencial,Sim,Gerada (R12)
+dim_posto,cnpj,STRING,"CNPJ do posto, só dígitos",14 dígitos,Sim,"stg_precos.cnpj (R3, R11)"
+dim_posto,primeira_coleta,DATE,Primeira data com preço válido do posto,Período da coleta,Sim,Derivada da fato
+dim_posto,ultima_coleta,DATE,Última data com preço válido do posto,Período da coleta,Sim,Derivada da fato
+dim_posto,qtd_precos,BIGINT,Quantidade de preços válidos do posto,Inteiro positivo,Sim,Derivada da fato
+fato_preco,sk_data,INT,Chave da data da coleta,FK dim_tempo,Sim,stg_precos.data_coleta (R12)
+fato_preco,sk_posto,INT,Chave do posto,FK dim_posto,Sim,stg_precos.cnpj
+fato_preco,sk_produto,INT,Chave do produto,FK dim_produto,Sim,stg_precos.produto
+fato_preco,sk_local,INT,Chave do município do posto,FK dim_local,Sim,"stg_precos.uf, municipio"
+fato_preco,sk_bandeira,INT,Chave da bandeira vigente na data da coleta,FK dim_bandeira,Sim,stg_precos.bandeira
+fato_preco,valor_venda,DOUBLE,"Preço de venda ao consumidor (média, se houver duplicata)",R$ 2 a 15 (litro); R$ 1 a 15 (m³),Sim,"stg_precos.valor_venda (R6, R8)"
+fato_preco,qtd_registros_origem,INT,Quantidade de linhas de origem agregadas na linha,Inteiro >= 1,Sim,R8
